@@ -4,6 +4,10 @@ from pathlib import Path
 from typing import Dict, List
 
 
+def _clamp(value: float, minimum: float, maximum: float) -> float:
+    return max(minimum, min(maximum, value))
+
+
 class ShotInheritanceEngine:
     """Build inheritance data between sequential shots for cinematic continuity."""
 
@@ -22,10 +26,36 @@ class ShotInheritanceEngine:
             shot_id = str(payload.get('shot_id', 'unknown_shot'))
             plan = motion_plans.get(shot_id, {}).get('plan', {})
 
+            parallax_strength = float(plan.get('parallax_strength', 0.0))
+            cinematic_drift = float(plan.get('cinematic_drift', 0.0))
+            handheld_micro_motion = float(plan.get('handheld_micro_motion', 0.0))
+            focus_breathing = float(plan.get('focus_breathing', 0.0))
+            source_fields = [
+                'parallax_strength',
+                'cinematic_drift',
+                'handheld_micro_motion',
+                'focus_breathing',
+            ]
+
+            camera_momentum = _clamp(
+                parallax_strength * 0.45
+                + cinematic_drift * 0.25
+                + handheld_micro_motion * 0.2
+                + focus_breathing * 0.1,
+                0.0,
+                1.0,
+            )
+
+            if 'motion_intensity' in plan:
+                camera_momentum = _clamp(camera_momentum + float(plan.get('motion_intensity', 0.0)) * 0.15, 0.0, 1.0)
+                source_fields.append('motion_intensity')
+
             current = {
                 'shot_id': shot_id,
                 'emotional_tone': payload.get('emotion', 'neutral'),
-                'camera_momentum': plan.get('velocity', 0.35),
+                'camera_momentum': round(camera_momentum, 3),
+                'source_fields_used_for_momentum': source_fields,
+                'computed_camera_momentum': round(camera_momentum, 3),
                 'lighting_direction': payload.get('visual_tone', 'cinematic'),
                 'motion_intensity': payload.get('motion_intensity', 0.35),
                 'spatial_orientation': payload.get('camera_move', 'static'),

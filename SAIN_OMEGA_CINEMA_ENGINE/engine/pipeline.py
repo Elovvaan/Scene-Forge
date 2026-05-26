@@ -53,8 +53,8 @@ class SAINOmegaPipeline:
             temporal = self.temporal_engine.interpolate_shot(
                 shot_id=shot_id,
                 start_frame=Path(payload['start_frame']),
-                generated_frames=generated,
-                target_frame=target_generated[0] if target_generated else Path(payload['target_frame']),
+                generated_frames=(generated or []) + (target_generated or []),
+                target_frame=Path(payload['target_frame']),
                 motion_plan=motion_plan,
             )
             all_candidates.extend(temporal.sequence)

@@ -57,9 +57,4 @@ class CameraSimulator:
             pan_canvas.paste(moved, (pan, 0))
             moved = pan_canvas.crop((0, 0, w, h))
 
-        # Maintain spatial consistency by stabilizing around inferred horizon.
-        horizon_y = int(depth.horizon * (h - 1))
-        if 0 < horizon_y < h:
-            horizon_strip = moved.crop((0, max(0, horizon_y - 1), w, min(h, horizon_y + 1)))
-            moved.paste(horizon_strip, (0, max(0, horizon_y - 1)))
         return moved

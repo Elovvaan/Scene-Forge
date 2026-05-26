@@ -7,7 +7,7 @@ from typing import Any, Dict, List
 
 
 @dataclass
-class ShotPacket:
+class ShotMetadataPacket:
     shot_id: str
     scene_id: str
     duration_seconds: float
@@ -39,16 +39,16 @@ class ShotPacket:
         return packet_path
 
 
-def build_shot_packets(panels: List[Path], packets_dir: Path, scene_id: str, fps: int = 8) -> List[ShotPacket]:
+def build_shot_packets(panels: List[Path], packets_dir: Path, scene_id: str, fps: int = 8) -> List[ShotMetadataPacket]:
     """Build sliding-window shot packets from extracted clean panel images."""
-    packets: List[ShotPacket] = []
+    packets: List[ShotMetadataPacket] = []
     for i in range(len(panels) - 1):
         start_panel = panels[i]
         target_panel = panels[i + 1]
         shot_id = f'shot_{i + 1:03d}'
         continuity_id = f'{scene_id}_{shot_id}'
         packets.append(
-            ShotPacket(
+            ShotMetadataPacket(
                 shot_id=shot_id,
                 scene_id=scene_id,
                 duration_seconds=2.0,

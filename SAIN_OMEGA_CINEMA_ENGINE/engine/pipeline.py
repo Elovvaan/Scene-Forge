@@ -6,6 +6,8 @@ from SAIN_OMEGA_CINEMA_ENGINE.continuity.chain import ContinuityChain
 from SAIN_OMEGA_CINEMA_ENGINE.engine.frame_generator import FrameGenerator
 from SAIN_OMEGA_CINEMA_ENGINE.engine.motion_validator import MotionPlanValidator
 from SAIN_OMEGA_CINEMA_ENGINE.engine.storyboard_extractor import StoryboardExtractor
+from SAIN_OMEGA_CINEMA_ENGINE.engine.temporal_engine import TemporalInterpolationEngine
+from SAIN_OMEGA_CINEMA_ENGINE.engine.shot_inheritance import ShotInheritanceEngine
 from SAIN_OMEGA_CINEMA_ENGINE.packets.shot_packet import create_shot_packets
 from SAIN_OMEGA_CINEMA_ENGINE.render.sequencer import FrameSequencer
 from SAIN_OMEGA_CINEMA_ENGINE.render.video_assembler import VideoAssembler
@@ -21,6 +23,8 @@ class SAINOmegaPipeline:
         self.assembler = VideoAssembler()
         self.chain = ContinuityChain(paths.continuity / 'continuity_chain.json')
         self.motion_validator = MotionPlanValidator()
+        self.temporal_engine = TemporalInterpolationEngine()
+        self.inheritance_engine = ShotInheritanceEngine()
 
     def run(self, storyboard_sheet: Path, story_text: str = '') -> Dict[str, List[Path] | Path]:
         panels = self.extractor.extract_panels(storyboard_sheet)
@@ -29,19 +33,32 @@ class SAINOmegaPipeline:
         shot_packets = create_shot_packets(panels, packets_dir=packets_dir, scene_id=scene_id)
 
         all_candidates: List[Path] = []
+        shot_payloads: List[Dict[str, object]] = []
+        temporal_analysis: List[Dict[str, object]] = []
+
         for packet_path in shot_packets:
             payload = json.loads(packet_path.read_text(encoding='utf-8'))
+            shot_payloads.append(payload)
             shot_id = payload.get('shot_id', Path(payload['start_frame']).stem)
             emotion = payload.get('emotion', 'neutral')
-            all_candidates.extend(self.generator.generate_candidates(Path(payload['start_frame']), count=1, shot_id=shot_id, emotion=emotion))
-            all_candidates.extend(
-                self.generator.generate_candidates(
-                    Path(payload['target_frame']),
-                    count=1,
-                    shot_id=f'{shot_id}_target',
-                    emotion=emotion,
-                )
+            generated = self.generator.generate_candidates(Path(payload['start_frame']), count=1, shot_id=shot_id, emotion=emotion)
+            target_generated = self.generator.generate_candidates(
+                Path(payload['target_frame']),
+                count=1,
+                shot_id=f'{shot_id}_target',
+                emotion=emotion,
             )
+
+            motion_plan = self.generator.motion_plans.get(shot_id, {}).get('plan', {})
+            temporal = self.temporal_engine.interpolate_shot(
+                shot_id=shot_id,
+                start_frame=Path(payload['start_frame']),
+                generated_frames=generated,
+                target_frame=target_generated[0] if target_generated else Path(payload['target_frame']),
+                motion_plan=motion_plan,
+            )
+            all_candidates.extend(temporal.sequence)
+            temporal_analysis.append(temporal.analysis)
 
         sequence = self.sequencer.sequence(all_candidates, self.paths.render_frames / 'sequence')
         states = [self.chain.analyze_frame(f, i) for i, f in enumerate(sequence, start=1)]
@@ -50,6 +67,14 @@ class SAINOmegaPipeline:
         video_path = self.assembler.assemble_mp4(sequence, self.paths.videos / f'{storyboard_sheet.stem}_cinema.mp4')
         motion_path = self.paths.continuity / f'{storyboard_sheet.stem}_motion_plans.json'
         motion_path.write_text(json.dumps(self.generator.motion_plans, indent=2), encoding='utf-8')
+
+
+        inheritance_report = self.inheritance_engine.build_inheritance_chain(shot_payloads, self.generator.motion_plans)
+        inheritance_path = self.paths.continuity / f'{storyboard_sheet.stem}_shot_inheritance.json'
+        inheritance_path.write_text(json.dumps(inheritance_report, indent=2), encoding='utf-8')
+
+        temporal_path = self.paths.continuity / f'{storyboard_sheet.stem}_temporal_analysis.json'
+        temporal_path.write_text(json.dumps({'active': True, 'shots': temporal_analysis}, indent=2), encoding='utf-8')
 
         validation_report = self.motion_validator.validate_all(self.generator.motion_plans)
         validation_path = self.paths.continuity / f'{storyboard_sheet.stem}_motion_validation.json'
@@ -64,4 +89,8 @@ class SAINOmegaPipeline:
             'motion_plans': motion_path,
             'motion_validation': validation_path,
             'motion_validation_report': validation_report,
+            'temporal_active': self.temporal_engine.active,
+            'shot_inheritance_active': self.inheritance_engine.active,
+            'shot_inheritance': inheritance_path,
+            'temporal_analysis': temporal_path,
         }

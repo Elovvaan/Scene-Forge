@@ -64,11 +64,11 @@ class DepthEngine:
 
         # Horizon: row with strongest horizontal edge energy.
         edges = gray
-        row_scores = []
-        for y in range(h):
-            band = edges.crop((0, y, w, min(h, y + 1)))
-            row_scores.append(ImageStat.Stat(band).mean[0])
-        horizon = row_scores.index(max(row_scores)) / max(1, h - 1)
+        row_sums = [0] * h
+        for idx, value in enumerate(edges.getdata()):
+            row_sums[idx // w] += value
+        strongest_row = max(range(h), key=row_sums.__getitem__)
+        horizon = strongest_row / max(1, h - 1)
 
         left_luma = ImageStat.Stat(img.convert('L').crop((0, 0, w // 2, h))).mean[0]
         right_luma = ImageStat.Stat(img.convert('L').crop((w // 2, 0, w, h))).mean[0]

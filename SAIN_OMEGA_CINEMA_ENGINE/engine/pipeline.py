@@ -42,7 +42,7 @@ class SAINOmegaPipeline:
             shot_id = payload.get('shot_id', Path(payload['start_frame']).stem)
             emotion = payload.get('emotion', 'neutral')
             generated = self.generator.generate_candidates(Path(payload['start_frame']), count=1, shot_id=shot_id, emotion=emotion)
-            self.generator.generate_candidates(
+            target_generated = self.generator.generate_candidates(
                 Path(payload['target_frame']),
                 count=1,
                 shot_id=f'{shot_id}_target',
@@ -54,7 +54,7 @@ class SAINOmegaPipeline:
                 shot_id=shot_id,
                 start_frame=Path(payload['start_frame']),
                 generated_frames=generated,
-                target_frame=Path(payload['target_frame']),
+                target_frame=target_generated[0] if target_generated else Path(payload['target_frame']),
                 motion_plan=motion_plan,
             )
             all_candidates.extend(temporal.sequence)

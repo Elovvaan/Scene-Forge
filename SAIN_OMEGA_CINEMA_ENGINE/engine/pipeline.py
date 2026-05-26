@@ -10,6 +10,7 @@ from SAIN_OMEGA_CINEMA_ENGINE.engine.temporal_engine import TemporalInterpolatio
 from SAIN_OMEGA_CINEMA_ENGINE.engine.shot_inheritance import ShotInheritanceEngine
 from SAIN_OMEGA_CINEMA_ENGINE.engine.motion_quality import MotionQualityScorer
 from SAIN_OMEGA_CINEMA_ENGINE.engine.frame_synthesis_bridge import FrameSynthesisBridge
+from SAIN_OMEGA_CINEMA_ENGINE.engine.synthesis_validator import SynthesisPacketValidator
 from SAIN_OMEGA_CINEMA_ENGINE.packets.shot_packet import create_shot_packets
 from SAIN_OMEGA_CINEMA_ENGINE.render.sequencer import FrameSequencer
 from SAIN_OMEGA_CINEMA_ENGINE.render.video_assembler import VideoAssembler
@@ -29,6 +30,7 @@ class SAINOmegaPipeline:
         self.inheritance_engine = ShotInheritanceEngine()
         self.motion_quality_scorer = MotionQualityScorer()
         self.frame_synthesis_bridge = FrameSynthesisBridge()
+        self.synthesis_validator = SynthesisPacketValidator()
 
     def run(self, storyboard_sheet: Path, story_text: str = '') -> Dict[str, List[Path] | Path]:
         panels = self.extractor.extract_panels(storyboard_sheet)
@@ -97,6 +99,12 @@ class SAINOmegaPipeline:
             output_path=self.paths.continuity / f'{storyboard_sheet.stem}_synthesis_manifest.json',
         )
 
+        synthesis_validation = self.synthesis_validator.validate_packets(
+            scene_id=storyboard_sheet.stem,
+            packet_paths=synthesis_packets,
+            output_dir=self.paths.continuity,
+        )
+
         motion_quality = self.motion_quality_scorer.score_scene(
             scene_id=storyboard_sheet.stem,
             shot_payloads=shot_payloads,
@@ -126,4 +134,6 @@ class SAINOmegaPipeline:
             'synthesis_manifest': synthesis_manifest,
             'motion_quality_score': motion_quality.overall_score,
             'motion_quality': motion_quality.output_path,
+            'synthesis_validation_report': synthesis_validation,
+            'synthesis_validation': Path(synthesis_validation['output_path']),
         }

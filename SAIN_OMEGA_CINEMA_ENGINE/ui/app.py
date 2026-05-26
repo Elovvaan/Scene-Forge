@@ -80,10 +80,17 @@ class SAINOmegaUI:
         if result['synthesis_packets']:
             self._append_log(f"First synthesis packet: {result['synthesis_packets'][0]}")
         self._append_log(f"Synthesis manifest: {result['synthesis_manifest']}")
+        synthesis_validation = result['synthesis_validation_report']
+        self._append_log(f"Valid synthesis packets: {synthesis_validation['valid']}")
+        self._append_log(f"Invalid synthesis packets: {synthesis_validation['invalid']}")
+        self._append_log(f"Synthesis validation saved: {result['synthesis_validation']}")
         self._append_log(f"Motion quality score: {result['motion_quality_score']}/100")
         self._append_log(f"Motion quality saved: {result['motion_quality']}")
         if result['motion_quality_score'] < 70:
             self._append_log('Motion quality needs review.')
+        if synthesis_validation['issues']:
+            for issue in synthesis_validation['issues']:
+                self._append_log(f"Invalid synthesis packet - synthesis_id={issue['synthesis_id']}: {issue['reason']}")
         if validation['issues']:
             for issue in validation['issues']:
                 self._append_log(f"Invalid motion plan - shot_id={issue['shot_id']}: {issue['reason']}")

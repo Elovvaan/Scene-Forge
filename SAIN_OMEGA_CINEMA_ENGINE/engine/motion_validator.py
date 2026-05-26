@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
@@ -34,8 +35,10 @@ class MotionPlanValidator:
 
         if 'parallax_strength' in plan:
             parallax = plan.get('parallax_strength')
-            if not isinstance(parallax, (int, float)):
+            if not isinstance(parallax, (int, float)) or isinstance(parallax, bool):
                 reasons.append('parallax_strength must be numeric')
+            elif not math.isfinite(float(parallax)):
+                reasons.append('parallax_strength must be a finite number')
             elif float(parallax) < 0.0 or float(parallax) > 1.0:
                 reasons.append('parallax_strength must be between 0.0 and 1.0')
 

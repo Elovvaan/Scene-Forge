@@ -32,7 +32,7 @@ class SAINOmegaPipeline:
         self.frame_synthesis_bridge = FrameSynthesisBridge()
         self.synthesis_validator = SynthesisPacketValidator()
 
-    def run(self, storyboard_sheet: Path, story_text: str = '') -> Dict[str, List[Path] | Path]:
+    def run(self, storyboard_sheet: Path, story_text: str = '') -> Dict[str, object]:
         panels = self.extractor.extract_panels(storyboard_sheet)
         scene_id = storyboard_sheet.stem
         packets_dir = self.paths.packets / scene_id

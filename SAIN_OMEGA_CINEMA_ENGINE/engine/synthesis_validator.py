@@ -12,7 +12,11 @@ class SynthesisPacketValidator:
         issues: List[Dict[str, str]] = []
 
         for packet_path in packet_paths:
-            payload = json.loads(packet_path.read_text(encoding='utf-8'))
+            try:
+                payload = json.loads(packet_path.read_text(encoding='utf-8'))
+            except (OSError, json.JSONDecodeError) as exc:
+                issues.append({'synthesis_id': packet_path.name, 'reason': f'failed to parse packet: {exc}'})
+                continue
             synthesis_id = str(payload.get('synthesis_id', packet_path.stem))
             reason = self._validate_packet(payload)
             if reason is not None:

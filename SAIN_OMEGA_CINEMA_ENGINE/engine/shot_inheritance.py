@@ -46,8 +46,12 @@ class ShotInheritanceEngine:
                 1.0,
             )
 
-            if 'motion_intensity' in plan:
-                camera_momentum = _clamp(camera_momentum + float(plan.get('motion_intensity', 0.0)) * 0.15, 0.0, 1.0)
+            if 'motion_intensity' in payload:
+                camera_momentum = _clamp(
+                    camera_momentum + float(payload.get('motion_intensity', 0.0)) * 0.15,
+                    0.0,
+                    1.0,
+                )
                 source_fields.append('motion_intensity')
 
             current = {

@@ -59,6 +59,9 @@ class SAINOmegaUI:
         result = self.pipeline.run(self.storyboard_path, story)
         self._append_log('Workflow complete ✅')
         self._append_log(f"Panels extracted: {len(result['panels'])}")
+        self._append_log(f"Shot packets: {len(result['shot_packets'])}")
+        if result['shot_packets']:
+            self._append_log(f"First packet: {result['shot_packets'][0]}")
         self._append_log(f"Frame candidates: {len(result['candidates'])}")
         self._append_log(f"Sequence frames: {len(result['sequence'])}")
         self._append_log(f"Video assembled: {result['video']}")

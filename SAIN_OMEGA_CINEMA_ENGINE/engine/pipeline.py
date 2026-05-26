@@ -8,6 +8,7 @@ from SAIN_OMEGA_CINEMA_ENGINE.engine.motion_validator import MotionPlanValidator
 from SAIN_OMEGA_CINEMA_ENGINE.engine.storyboard_extractor import StoryboardExtractor
 from SAIN_OMEGA_CINEMA_ENGINE.engine.temporal_engine import TemporalInterpolationEngine
 from SAIN_OMEGA_CINEMA_ENGINE.engine.shot_inheritance import ShotInheritanceEngine
+from SAIN_OMEGA_CINEMA_ENGINE.engine.motion_quality import MotionQualityScorer
 from SAIN_OMEGA_CINEMA_ENGINE.packets.shot_packet import create_shot_packets
 from SAIN_OMEGA_CINEMA_ENGINE.render.sequencer import FrameSequencer
 from SAIN_OMEGA_CINEMA_ENGINE.render.video_assembler import VideoAssembler
@@ -25,6 +26,7 @@ class SAINOmegaPipeline:
         self.motion_validator = MotionPlanValidator()
         self.temporal_engine = TemporalInterpolationEngine()
         self.inheritance_engine = ShotInheritanceEngine()
+        self.motion_quality_scorer = MotionQualityScorer()
 
     def run(self, storyboard_sheet: Path, story_text: str = '') -> Dict[str, List[Path] | Path]:
         panels = self.extractor.extract_panels(storyboard_sheet)
@@ -76,6 +78,14 @@ class SAINOmegaPipeline:
         temporal_path = self.paths.continuity / f'{storyboard_sheet.stem}_temporal_analysis.json'
         temporal_path.write_text(json.dumps({'active': True, 'shots': temporal_analysis}, indent=2), encoding='utf-8')
 
+        motion_quality = self.motion_quality_scorer.score_scene(
+            scene_id=storyboard_sheet.stem,
+            shot_payloads=shot_payloads,
+            motion_plans=self.generator.motion_plans,
+            temporal_analysis=temporal_analysis,
+            output_dir=self.paths.continuity,
+        )
+
         validation_report = self.motion_validator.validate_all(self.generator.motion_plans)
         validation_path = self.paths.continuity / f'{storyboard_sheet.stem}_motion_validation.json'
         validation_path.write_text(json.dumps(validation_report, indent=2), encoding='utf-8')
@@ -93,4 +103,6 @@ class SAINOmegaPipeline:
             'shot_inheritance_active': self.inheritance_engine.active,
             'shot_inheritance': inheritance_path,
             'temporal_analysis': temporal_path,
+            'motion_quality_score': motion_quality.overall_score,
+            'motion_quality': motion_quality.output_path,
         }

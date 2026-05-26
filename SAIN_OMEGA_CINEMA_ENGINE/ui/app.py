@@ -76,6 +76,10 @@ class SAINOmegaUI:
         self._append_log(f"Shot inheritance: {'ACTIVE' if result['shot_inheritance_active'] else 'INACTIVE'}")
         self._append_log(f"Inheritance chain saved: {result['shot_inheritance']}")
         self._append_log(f"Temporal analysis saved: {result['temporal_analysis']}")
+        self._append_log(f"Motion quality score: {result['motion_quality_score']}/100")
+        self._append_log(f"Motion quality saved: {result['motion_quality']}")
+        if result['motion_quality_score'] < 70:
+            self._append_log('Motion quality needs review.')
         if validation['issues']:
             for issue in validation['issues']:
                 self._append_log(f"Invalid motion plan - shot_id={issue['shot_id']}: {issue['reason']}")

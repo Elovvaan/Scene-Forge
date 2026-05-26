@@ -42,8 +42,7 @@ class MotionPlanner:
             base_parallax -= 0.03
 
         environment = ['fog_drift']
-        if depth.lighting_direction in {'left_to_right', 'right_to_left'}:
-            environment.append('light_flicker')
+        environment.append('light_flicker')
         if depth.horizon < 0.3 or depth.horizon > 0.75:
             environment.append('atmospheric_haze')
 

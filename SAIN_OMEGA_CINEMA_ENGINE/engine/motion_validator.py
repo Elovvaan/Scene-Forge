@@ -35,12 +35,14 @@ class MotionPlanValidator:
 
         if 'parallax_strength' in plan:
             parallax = plan.get('parallax_strength')
-            if not isinstance(parallax, (int, float)) or isinstance(parallax, bool):
+            if isinstance(parallax, bool) or not isinstance(parallax, (int, float)):
                 reasons.append('parallax_strength must be numeric')
-            elif not math.isfinite(float(parallax)):
-                reasons.append('parallax_strength must be a finite number')
-            elif float(parallax) < 0.0 or float(parallax) > 1.0:
-                reasons.append('parallax_strength must be between 0.0 and 1.0')
+            else:
+                parallax_float = float(parallax)
+                if not math.isfinite(parallax_float):
+                    reasons.append('parallax_strength must be a finite number')
+                elif parallax_float < 0.0 or parallax_float > 1.0:
+                    reasons.append('parallax_strength must be between 0.0 and 1.0')
 
         if 'environment_motion' in plan and not isinstance(plan.get('environment_motion'), list):
             reasons.append('environment_motion must be a list')

@@ -36,6 +36,7 @@ class SynthesisPacketValidator:
             'synthesis_id',
             'shot_id',
             'scene_id',
+            'prompt',
             'camera_move',
             'timing_curve',
             'negative_prompt',
@@ -45,8 +46,17 @@ class SynthesisPacketValidator:
             if field not in payload:
                 return f'missing field: {field}'
 
-        if not payload.get('prompt', '').strip():
+        prompt = payload.get('prompt')
+        if not isinstance(prompt, str) or not prompt.strip():
             return 'prompt is empty'
+
+        negative_prompt = payload.get('negative_prompt')
+        if not isinstance(negative_prompt, str) or not negative_prompt.strip():
+            return 'negative_prompt is empty'
+
+        continuity_locks = payload.get('continuity_locks')
+        if not isinstance(continuity_locks, dict) or not continuity_locks:
+            return 'continuity_locks is empty'
 
         for path_key in ('previous_frame', 'target_frame'):
             path_value = payload.get(path_key)

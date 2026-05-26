@@ -29,14 +29,25 @@ class SAINOmegaPipeline:
         all_candidates: List[Path] = []
         for packet_path in shot_packets:
             payload = json.loads(packet_path.read_text(encoding='utf-8'))
-            all_candidates.extend(self.generator.generate_candidates(Path(payload['start_frame']), count=1))
-            all_candidates.extend(self.generator.generate_candidates(Path(payload['target_frame']), count=1))
+            shot_id = payload.get('shot_id', Path(payload['start_frame']).stem)
+            emotion = payload.get('emotion', 'neutral')
+            all_candidates.extend(self.generator.generate_candidates(Path(payload['start_frame']), count=1, shot_id=shot_id, emotion=emotion))
+            all_candidates.extend(
+                self.generator.generate_candidates(
+                    Path(payload['target_frame']),
+                    count=1,
+                    shot_id=f'{shot_id}_target',
+                    emotion=emotion,
+                )
+            )
 
         sequence = self.sequencer.sequence(all_candidates, self.paths.render_frames / 'sequence')
         states = [self.chain.analyze_frame(f, i) for i, f in enumerate(sequence, start=1)]
         self.chain.persist(states)
 
         video_path = self.assembler.assemble_mp4(sequence, self.paths.videos / f'{storyboard_sheet.stem}_cinema.mp4')
+        motion_path = self.paths.continuity / f'{storyboard_sheet.stem}_motion_plans.json'
+        motion_path.write_text(json.dumps(self.generator.motion_plans, indent=2), encoding='utf-8')
         return {
             'panels': panels,
             'shot_packets': shot_packets,
@@ -44,4 +55,5 @@ class SAINOmegaPipeline:
             'sequence': sequence,
             'video': video_path,
             'continuity': self.chain.path,
+            'motion_plans': motion_path,
         }

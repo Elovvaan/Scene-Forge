@@ -30,7 +30,7 @@ class TemporalInterpolationEngine:
         sequence = self._smooth_progression(base_sequence)
 
         motion_plan = motion_plan or {}
-        curve = motion_plan.get('curve', 'ease-in-out')
+        curve = motion_plan.get('timing_curve', 'ease_in_out')
         velocity = float(motion_plan.get('velocity', 0.35))
 
         analysis: Dict[str, object] = {

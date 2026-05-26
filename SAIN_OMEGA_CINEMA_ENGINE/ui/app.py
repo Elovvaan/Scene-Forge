@@ -67,6 +67,15 @@ class SAINOmegaUI:
         self._append_log(f"Video assembled: {result['video']}")
         self._append_log(f"Continuity saved: {result['continuity']}")
 
+        validation = result['motion_validation_report']
+        self._append_log(f"Motion plans: {validation['total']}")
+        self._append_log(f"Valid motion plans: {validation['valid']}")
+        self._append_log(f"Invalid motion plans: {validation['invalid']}")
+        self._append_log(f"Motion validation saved: {result['motion_validation']}")
+        if validation['issues']:
+            for issue in validation['issues']:
+                self._append_log(f"Invalid motion plan - shot_id={issue['shot_id']}: {issue['reason']}")
+
     def _append_log(self, msg: str) -> None:
         self.log.insert('end', msg + '\n')
         self.log.see('end')

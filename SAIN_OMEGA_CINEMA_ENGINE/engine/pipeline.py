@@ -9,6 +9,7 @@ from SAIN_OMEGA_CINEMA_ENGINE.engine.storyboard_extractor import StoryboardExtra
 from SAIN_OMEGA_CINEMA_ENGINE.engine.temporal_engine import TemporalInterpolationEngine
 from SAIN_OMEGA_CINEMA_ENGINE.engine.shot_inheritance import ShotInheritanceEngine
 from SAIN_OMEGA_CINEMA_ENGINE.engine.motion_quality import MotionQualityScorer
+from SAIN_OMEGA_CINEMA_ENGINE.engine.frame_synthesis_bridge import FrameSynthesisBridge
 from SAIN_OMEGA_CINEMA_ENGINE.packets.shot_packet import create_shot_packets
 from SAIN_OMEGA_CINEMA_ENGINE.render.sequencer import FrameSequencer
 from SAIN_OMEGA_CINEMA_ENGINE.render.video_assembler import VideoAssembler
@@ -27,6 +28,7 @@ class SAINOmegaPipeline:
         self.temporal_engine = TemporalInterpolationEngine()
         self.inheritance_engine = ShotInheritanceEngine()
         self.motion_quality_scorer = MotionQualityScorer()
+        self.frame_synthesis_bridge = FrameSynthesisBridge()
 
     def run(self, storyboard_sheet: Path, story_text: str = '') -> Dict[str, List[Path] | Path]:
         panels = self.extractor.extract_panels(storyboard_sheet)
@@ -37,6 +39,7 @@ class SAINOmegaPipeline:
         all_candidates: List[Path] = []
         shot_payloads: List[Dict[str, object]] = []
         temporal_analysis: List[Dict[str, object]] = []
+        synthesis_packets: List[Path] = []
 
         for packet_path in shot_packets:
             payload = json.loads(packet_path.read_text(encoding='utf-8'))
@@ -62,6 +65,15 @@ class SAINOmegaPipeline:
             all_candidates.extend(temporal.sequence)
             temporal_analysis.append(temporal.analysis)
 
+            shot_synthesis_dir = packets_dir / 'synthesis'
+            shot_synthesis_packets = self.frame_synthesis_bridge.build_for_shot(
+                shot_payload=payload,
+                motion_plan_payload=self.generator.motion_plans.get(shot_id, {}),
+                temporal_analysis=temporal.analysis,
+                synthesis_dir=shot_synthesis_dir,
+            )
+            synthesis_packets.extend(shot_synthesis_packets)
+
         sequence = self.sequencer.sequence(all_candidates, self.paths.render_frames / 'sequence')
         states = [self.chain.analyze_frame(f, i) for i, f in enumerate(sequence, start=1)]
         self.chain.persist(states)
@@ -77,6 +89,13 @@ class SAINOmegaPipeline:
 
         temporal_path = self.paths.continuity / f'{storyboard_sheet.stem}_temporal_analysis.json'
         temporal_path.write_text(json.dumps({'active': True, 'shots': temporal_analysis}, indent=2), encoding='utf-8')
+
+
+        synthesis_manifest = self.frame_synthesis_bridge.write_manifest(
+            scene_id=storyboard_sheet.stem,
+            packet_paths=synthesis_packets,
+            output_path=self.paths.continuity / f'{storyboard_sheet.stem}_synthesis_manifest.json',
+        )
 
         motion_quality = self.motion_quality_scorer.score_scene(
             scene_id=storyboard_sheet.stem,
@@ -103,6 +122,8 @@ class SAINOmegaPipeline:
             'shot_inheritance_active': self.inheritance_engine.active,
             'shot_inheritance': inheritance_path,
             'temporal_analysis': temporal_path,
+            'synthesis_packets': synthesis_packets,
+            'synthesis_manifest': synthesis_manifest,
             'motion_quality_score': motion_quality.overall_score,
             'motion_quality': motion_quality.output_path,
         }

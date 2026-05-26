@@ -20,7 +20,7 @@ class ShotInheritanceEngine:
 
         for payload in shot_payloads:
             shot_id = str(payload.get('shot_id', 'unknown_shot'))
-            plan = motion_plans.get(shot_id, {}).get('plan', {}) if isinstance(motion_plans.get(shot_id), dict) else {}
+            plan = motion_plans.get(shot_id, {}).get('plan', {})
 
             current = {
                 'shot_id': shot_id,

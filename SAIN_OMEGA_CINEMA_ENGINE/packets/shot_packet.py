@@ -39,29 +39,43 @@ class ShotPacket:
         return packet_path
 
 
-def create_shot_packets(panels: List[Path], packets_dir: Path, scene_id: str, fps: int = 8) -> List[Path]:
-    """Create sliding-window shot packets from extracted clean panel images."""
-    packet_paths: List[Path] = []
+def build_shot_packets(panels: List[Path], packets_dir: Path, scene_id: str, fps: int = 8) -> List[ShotPacket]:
+    """Build sliding-window shot packets from extracted clean panel images."""
+    packets: List[ShotPacket] = []
     for i in range(len(panels) - 1):
         start_panel = panels[i]
         target_panel = panels[i + 1]
         shot_id = f'shot_{i + 1:03d}'
         continuity_id = f'{scene_id}_{shot_id}'
-        packet = ShotPacket(
-            shot_id=shot_id,
-            scene_id=scene_id,
-            duration_seconds=2.0,
-            fps=fps,
-            start_frame=start_panel,
-            target_frame=target_panel,
-            storyboard_panel=start_panel,
-            camera_move='static',
-            emotion='neutral',
-            motion_intensity=0.35,
-            visual_tone='cinematic',
-            continuity_id=continuity_id,
-            references=[str(start_panel), str(target_panel)],
-            output_dir=packets_dir,
+        packets.append(
+            ShotPacket(
+                shot_id=shot_id,
+                scene_id=scene_id,
+                duration_seconds=2.0,
+                fps=fps,
+                start_frame=start_panel,
+                target_frame=target_panel,
+                storyboard_panel=start_panel,
+                camera_move='static',
+                emotion='neutral',
+                motion_intensity=0.35,
+                visual_tone='cinematic',
+                continuity_id=continuity_id,
+                references=[str(start_panel), str(target_panel)],
+                output_dir=packets_dir,
+            )
         )
+    return packets
+
+
+def create_shot_packet_files(panels: List[Path], packets_dir: Path, scene_id: str, fps: int = 8) -> List[Path]:
+    """Build shot packets, persist them as JSON files, and return the file paths."""
+    packet_paths: List[Path] = []
+    for packet in build_shot_packets(panels, packets_dir, scene_id, fps=fps):
         packet_paths.append(packet.save_json(packets_dir))
     return packet_paths
+
+
+def create_shot_packets(panels: List[Path], packets_dir: Path, scene_id: str, fps: int = 8) -> List[Path]:
+    """Backward-compatible wrapper for creating persisted shot packet JSON files."""
+    return create_shot_packet_files(panels, packets_dir, scene_id, fps=fps)

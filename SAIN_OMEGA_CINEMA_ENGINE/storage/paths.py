@@ -39,6 +39,18 @@ class SAINPaths:
         return self.root / 'storage'
 
     @property
+    def project(self) -> Path:
+        return self.root / 'project'
+
+    @property
+    def project_shots(self) -> Path:
+        return self.project / 'shots'
+
+    @property
+    def universe_memory(self) -> Path:
+        return self.project / 'universe_memory.json'
+
+    @property
     def storyboard_refs(self) -> Path:
         return self.references / 'storyboard'
 
@@ -72,5 +84,7 @@ class SAINPaths:
             self.videos,
             self.packets,
             self.continuity,
+            self.project,
+            self.project_shots,
         ]:
             p.mkdir(parents=True, exist_ok=True)

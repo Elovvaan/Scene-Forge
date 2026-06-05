@@ -70,6 +70,8 @@ class SAINOmegaPipeline:
             end = Path(str(payload['end_frame']))
             if not start.exists() or not end.exists():
                 self.generate_frames(self.shot_payloads.index(payload))
+                start = Path(str(payload['start_frame']))
+                end = Path(str(payload['end_frame']))
             clip = self.video_provider.generate_video(start, end, payload)
             payload['clip'] = str(clip)
             clips.append(clip)

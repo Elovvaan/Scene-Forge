@@ -112,7 +112,7 @@ class SAINOmegaUI:
     def _pick_storyboard(self) -> None:
         selected = filedialog.askopenfilenames(
             title='Select Storyboard PDF or Images',
-            filetypes=[('Storyboards', '*.pdf *.png *.jpg *.jpeg'), ('PDF', '*.pdf'), ('Images', '*.png *.jpg *.jpeg')],
+            filetypes=[('Storyboards', '*.pdf *.png *.jpg *.jpeg *.webp'), ('PDF', '*.pdf'), ('Images', '*.png *.jpg *.jpeg *.webp')],
         )
         if not selected:
             return

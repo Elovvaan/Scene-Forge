@@ -114,12 +114,17 @@ class SAINOmegaUI:
             title='Select Storyboard PDF or Images',
             filetypes=[('Storyboards', '*.pdf *.png *.jpg *.jpeg *.webp'), ('PDF', '*.pdf'), ('Images', '*.png *.jpg *.jpeg *.webp')],
         )
-        if not selected:
-            return
         try:
-            paths = [Path(p) for p in selected]
-            self.storyboard_path = paths[0]
-            source = paths if len(paths) > 1 else paths[0]
+            if selected:
+                paths = [Path(p) for p in selected]
+                self.storyboard_path = paths[0]
+                source = paths if len(paths) > 1 else paths[0]
+            else:
+                directory = filedialog.askdirectory(title='Select Storyboard Folder')
+                if not directory:
+                    return
+                self.storyboard_path = Path(directory)
+                source = self.storyboard_path
             result = self.pipeline.intake_storyboard(source)
             self._populate_shot_list(result['shots'])
             self.status.configure(text=f"{len(result['shots'])} shots extracted automatically.")

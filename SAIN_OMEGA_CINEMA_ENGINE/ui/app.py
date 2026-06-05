@@ -194,10 +194,14 @@ class SAINOmegaUI:
             label.configure(text='Not generated', image='')
             return
         try:
-            image = tk.PhotoImage(file=str(path))
+            from PIL import Image, ImageTk
+
+            pil_image = Image.open(path)
+            pil_image.thumbnail((420, 260), Image.Resampling.LANCZOS)
+            image = ImageTk.PhotoImage(pil_image)
             self.preview_images.append(image)
             label.configure(image=image, text='')
-        except tk.TclError:
+        except Exception:
             label.configure(text=str(path), image='')
 
     def _chat(self, speaker: str, message: str) -> None:

@@ -66,5 +66,11 @@ class FrameGenerator:
     def generate_candidates(self, panel_path: Path, count: int = 3, shot_id: str | None = None, emotion: str = 'neutral') -> List[Path]:
         # Backward-compatible shim for older callers.
         target_dir = self.output_dir / panel_path.parent.name / panel_path.stem
-        frames = self.generate_start_end_frames(panel_path, target_dir, shot_id or panel_path.stem, emotion)
+        prompt_context = f'Emotion: {emotion}'
+        frames = self.generate_start_end_frames(
+            storyboard_panel=panel_path,
+            shot_dir=target_dir,
+            shot_id=shot_id or panel_path.stem,
+            prompt_context=prompt_context,
+        )
         return [frames['start_frame'], frames['end_frame']][:count]

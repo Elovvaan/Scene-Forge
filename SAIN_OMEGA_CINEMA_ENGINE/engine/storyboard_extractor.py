@@ -24,7 +24,7 @@ class StoryboardExtractor:
         if source.is_dir():
             images = sorted(p for p in source.iterdir() if p.suffix.lower() in SUPPORTED_IMAGES)
             if not images:
-                raise ValueError('Storyboard folder does not contain JPG or PNG images.')
+                raise ValueError('Storyboard folder does not contain supported images (.jpg, .jpeg, .png, .webp).')
             return self._copy_sequence(images)
 
         suffix = source.suffix.lower()

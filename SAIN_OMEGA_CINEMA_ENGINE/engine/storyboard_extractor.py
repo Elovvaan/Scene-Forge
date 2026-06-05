@@ -40,8 +40,15 @@ class StoryboardExtractor:
         shot_dir.mkdir(parents=True, exist_ok=True)
         panels: List[Path] = []
         for idx, image in enumerate(images, start=1):
-            out = shot_dir / f'panel_{idx:03d}{image.suffix.lower()}'
-            shutil.copy2(image, out)
+            out = shot_dir / f'panel_{idx:03d}.png'
+            if image.suffix.lower() == '.png':
+                shutil.copy2(image, out)
+            else:
+                try:
+                    from PIL import Image
+                except ImportError as exc:
+                    raise RuntimeError('Image storyboard intake requires Pillow. Install requirements.txt.') from exc
+                Image.open(image).convert('RGB').save(out)
             panels.append(out)
         return panels
 
